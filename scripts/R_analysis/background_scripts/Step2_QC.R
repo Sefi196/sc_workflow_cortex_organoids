@@ -1,9 +1,10 @@
 # load all libraries i need for workflow
-library(DoubletFinder)
-library(scater)
-library(scran)
-library(BiocSingular)
-library(monocle3)
+#library(DoubletFinder)
+#library(scater)
+#library(scran)
+#library(BiocSingular)
+#library(monocle3)
+#library(SeuratWrappers)
 library(gridExtra)
 library(dplyr)
 library(Seurat)
@@ -15,27 +16,29 @@ library(grid)
 library(cowplot)
 library(tidyverse)
 
-########### Read in raw data #######
+
+
+setwd("/data/scratch/users/yairp/FLAMES-may1/analysis/seurat_analysis/data/genes/")
+
+###########QC and filtering #######
 
 # get data location for filt CSV objects
-org_1A <- read.csv('geneSymbol_org_1A_gene_count.csv', header=T, row.names = 1)
-org_1B <- read.csv('geneSymbol_org_1B_gene_count.csv',header=T, row.names = 1)
+C1_STC <- read.csv('geneSymbol_C1_STC_gene_count.csv', header=T, row.names = 1)
+C4_STC <- read.csv('geneSymbol_C4_STC_gene_count.csv',header=T, row.names = 1)
+C2_Day25 <- read.csv('geneSymbol_C2_Day25_gene_count.csv',header=T, row.names = 1)
+C5_Day25 <- read.csv('geneSymbol_C5_Day25_gene_count.csv',header=T, row.names = 1)
+C2_Day55 <- read.csv('geneSymbol_C2_Day55_gene_count.csv',header=T, row.names = 1) ### lets try and removing this ###
+C3_Day55 <- read.csv('geneSymbol_C3_Day55_gene_count.csv',header=T, row.names = 1)
+C3_Day80 <- read.csv('geneSymbol_C3_Day80_gene_count.csv',header=T, row.names = 1)
+C5_Day80 <- read.csv('genes/geneSymbol_C5_Day80_gene_count.csv',header=T, row.names = 1)
 
-org_3A <- read.csv('geneSymbol_org_3A_gene_count.csv',header=T, row.names = 1)
-org_3B <- read.csv('geneSymbol_org_3B_gene_count.csv',header=T, row.names = 1)
-org_3C <- read.csv('geneSymbol_org_3C_gene_count.csv',header=T, row.names = 1)
 
-org_6A <- read.csv('geneSymbol_org_6A_gene_count.csv',header=T, row.names = 1)
-org_6B <- read.csv('geneSymbol_org_6B_gene_count.csv',header=T, row.names = 1)
-org_6C <- read.csv('geneSymbol_org_6C_gene_count.csv',header=T, row.names = 1)
-
+setwd("/data/scratch/users/yairp/FLAMES-may1/analysis/seurat_analysis/data/genes_QC/")
 
 ### plot UMAPS and sumamry stats from filtered objects 
-##UMAP plotting function
-
-
+##UMAP plotting fucntion
 #fucntion takes a single cell count matrix -> outputputs sumamry plots and UMAP object and removes doublets.
-plot_umap <- function(count.matrix=C1_STC, min.features = 0 , max.features = 100000, max.counts = 10000, min.counts = 1000, npc = 20, cluster_res = 0.7, fig_name = '1', project = "2", MT = 25) {
+plot_umap <- function(count.matrix=C1_STC, min.features = NULL, max.features = NULL, max.counts = 10000, min.counts = 10000, npc = 20, cluster_res = 0.7, fig_name = '1', project = "2", MT = 10) {
   
   # Function to calculate min.features and max.features if not provided
   calculate_feature_range <- function(nFeature_RNA) {
@@ -56,7 +59,7 @@ plot_umap <- function(count.matrix=C1_STC, min.features = 0 , max.features = 100
   rst_table <- data.frame()
   
   # Calculate the percentage of cells expressing each gene
-  gene_percent_expression <- base::rowMeans(count.matrix > 0) * 100
+  gene_percent_expression <- rowMeans(count.matrix > 0) * 100
   
   # Select genes expressed in at least 1% of cells
   genes_filter <- names(gene_percent_expression[gene_percent_expression > 1])
@@ -141,7 +144,7 @@ plot_umap <- function(count.matrix=C1_STC, min.features = 0 , max.features = 100
   # Summary doublets
   statsDoublets <- new_seurat_object@meta.data %>%
     group_by(DF.classifications) %>%
-    dplyr::summarize(Median_nCount_RNA = median(nCount_RNA), Median_nFeature_RNA = median(nFeature_RNA), Count = n())
+    summarize(Median_nCount_RNA = median(nCount_RNA), Median_nFeature_RNA = median(nFeature_RNA), Count = n())
   
   # Visualize doublets
   doublets <- DimPlot(new_seurat_object, reduction = 'umap', group.by = "DF.classifications")
@@ -152,19 +155,22 @@ plot_umap <- function(count.matrix=C1_STC, min.features = 0 , max.features = 100
   new_seurat_object <- subset(new_seurat_object, subset = DF.classifications == 'Singlet')
   
   # Appending in figure 
-  fig_umap <- DimPlot(new_seurat_object, reduction = "umap") + labs(color = "Cluster \n(from PCA)", title = '') + theme(text = element_text(size = 10))
-  fig_count <- FeaturePlot(new_seurat_object, reduction = "umap", features = 'nCount_RNA') + labs(color = "UMI count", title = '') + theme(text = element_text(size = 10))
-  fig_feature <- FeaturePlot(new_seurat_object, reduction = "umap", features = 'nFeature_RNA') + labs(color = str_wrap("Feature count (isoform/gene)", 15), title = '') + theme(text = element_text(size = 10))
+  rst_figures <- append(rst_figures, list(DimPlot(new_seurat_object, reduction = "umap") + labs(color = "Cluster \n(from PCA)", title = '') + theme(text = element_text(size = 10))))
+  
+  rst_figures <- append(rst_figures, list(
+    FeaturePlot(new_seurat_object, reduction = "umap", features = 'nCount_RNA') + labs(color = "UMI count", title = '') + theme(text = element_text(size = 10)),
+    FeaturePlot(new_seurat_object, reduction = "umap", features = 'nFeature_RNA') + labs(color = str_wrap("Feature count (isoform/gene)", 15), title = '') + theme(text = element_text(size = 10))
+  ))
   
   
   plot_scatter2 <- FeatureScatter(new_seurat_object, feature1 = "nCount_RNA", feature2 = "nFeature_RNA") +
-    geom_smooth(method = "lm") + NoLegend() + labs(title = "Association between reads and \ unique genes per cell AFTER filtering")
-  
+    geom_smooth(method = "lm") + NoLegend() + labs(title = "Association between reads and \nunique genes per cell AFTER filtering")
   
   plot_pc <- ElbowPlot(new_seurat_object) + labs(title = 'SD explained by each PC') + theme(text = element_text(size = 10))
   plot_umap <- grid.arrange(plot_pc,
                             #tableGrob(rst_table),
-                            plot_scatter2, fig_umap, fig_count, fig_feature, vln1, vln2, vln3, ncol = 2, top = textGrob(fig_name))
+                            plot_scatter2,
+                            rst_figures[[10]], rst_figures[[11]], rst_figures[[12]], vln1, vln2, vln3, ncol = 2, top = textGrob(fig_name))
   
   plot(doublets)
   tbl_sts1 <- tableGrob(statsDoublets)
@@ -177,7 +183,7 @@ plot_umap <- function(count.matrix=C1_STC, min.features = 0 , max.features = 100
                         "Median Feature per Cell before filter" = median(seurat_object$nFeature_RNA),
                         "Median Reads per Gene/Isoform before filter" = median(seurat_object$nCount_RNA),
                         "Median Feature per Cell" = median(new_seurat_object$nFeature_RNA),
-                        "Median Reads per Cell" = median(new_seurat_object$nCount_RNA),
+                        "Median Reads per Gene/Isoform" = median(new_seurat_object$nCount_RNA),
                         "Max Features" = max.features,
                         "Min Features" = min.features,
                         "Min Counts" = min.counts,
@@ -203,83 +209,74 @@ plot_umap <- function(count.matrix=C1_STC, min.features = 0 , max.features = 100
 }
 
 
-#### Generate QC plots and output umap object #### 
+#### Generate QC plots and output umap object
 
-###org_1A
-pdf(file = "org_1A_QC.pdf", width = 12, height = 12) 
-plots_1A <- plot_umap(decontx$removed_empty_org1A$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_1A (gene counts, cortex_org)', project = "org_1A", MT=10)
+###C1STC
+pdf(file = "C1STC_QC.pdf", width = 12, height = 12) 
+plotsC1_STC <- plot_umap(C1_STC, min.features = NULL, max.features = NULL, max.counts =100000, min.counts=1000, npc = 10, cluster_res = 0.7,fig_name = 'C1_STC (gene counts, Kolf2.1)', project = "C1_STC", MT=10)
 dev.off()
 
-org1A_umap_object <- plots_1A[[2]]
+C1_STC_umap_object <- plotsC1_STC[[2]]
+C1_STC_umap_object_doublets <- plotsC1_STC[[5]]
 
-saveRDS(org1A_umap_object, file = "org1A_umap_object.rds")
+saveRDS(C1_STC_umap_object, file = "C1_STC_umap_object.rds")
 
-###org_1B
-pdf(file = "org_1B_QC.pdf", width = 12, height = 12) 
-plots_1B <- plot_umap(decontx$removed_empty_org1B$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_1B (gene counts, cortex_org)', project = "org_1B", MT=10)
+###C4_STC
+pdf(file = "C4_STC_QC.pdf", width = 12, height = 12) 
+plotsC4_STC <- plot_umap(results$C4_STC_umap_object$decontaminated_counts, min.features = NULL, max.features = NULL, max.counts =100000, min.counts=1000,  npc = 10, cluster_res = 0.7,fig_name = 'C4_STC (gene counts, Kolf2.1)', project = "C4_STC", MT=10)
 dev.off()
 
-org1B_umap_object <- plots_1B[[2]]
+C4_STC_umap_object <- plotsC4_STC[[2]]
+saveRDS(C4_STC_umap_object, file = "C4_STC_umap_object.rds")
 
-saveRDS(org1B_umap_object, file = "org1B_umap_object.rds")
-
-###org_3A
-pdf(file = "org_3A_QC.pdf", width = 12, height = 12) 
-plots_3A <- plot_umap(decontx$removed_empty_org3A$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_3A (gene counts, cortex_org)', project = "org_3A", MT=10)
+###C2Day25
+pdf(file = "C2Day25_QC.pdf", width = 12, height = 12) 
+plotsC2Day25 <- plot_umap(results$C2_Day25_umap_object$decontaminated_counts, min.features = NULL, max.features = NULL, max.counts =100000, min.counts=1000, npc = 10, cluster_res = 0.7,fig_name = 'C2_Day25 (gene counts, Kolf2.1)', project = "C2_Day25", MT=10)
 dev.off()
 
-org3A_umap_object <- plots_3A[[2]]
+C2_Day25_umap_object <- plotsC2Day25[[2]]
+saveRDS(C2_Day25_umap_object, file = "C2_Day25_umap_object.rds")
 
-saveRDS(org3A_umap_object, file = "org3A_umap_object.rds")
-
-###org_3B
-pdf(file = "org_3B_QC.pdf", width = 12, height = 12) 
-plots_3B <- plot_umap(decontx$removed_empty_org3B$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_3B (gene counts, cortex_org)', project = "org_3B", MT=10)
+###C2Day55
+pdf(file = "C2Day55_QC.pdf", width = 12, height = 12) 
+plotsC2Day55 <- plot_umap(results$C2_Day55_umap_object$decontaminated_counts, min.features = 5000, max.features = 10000, max.counts =100000, min.counts=0, npc = 15, cluster_res = 0.7,fig_name = 'C2_Day55 (gene counts, Kolf2.1)', project = "C2_Day55", MT=10)
 dev.off()
 
-org3B_umap_object <- plots_3B[[2]]
-
-saveRDS(org3B_umap_object, file = "org3B_umap_object.rds")
+C2_Day55_umap_object <- plotsC2Day55[[2]]
 
 
-###org_3C
-pdf(file = "org_3C_QC.pdf", width = 12, height = 12) 
-plots_3C <- plot_umap(decontx$removed_empty_org3C$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_3C (gene counts, cortex_org)', project = "org_3C", MT=10)
+saveRDS(C2_Day55_umap_object, file = "C2_Day55_umap_object.rds")
+
+###C3Day55
+pdf(file = "C3Day55_QC.pdf", width = 12, height = 12) 
+plotsC3Day55 <- plot_umap(results$C3_Day55_umap_object$decontaminated_counts, min.features = NULL, max.features = NULL, max.counts =100000, min.counts=1000, npc = 13, cluster_res = 0.7,fig_name = 'C3_Day55 (gene counts, Kolf2.1)', project = "C3_Day55", MT=10)
 dev.off()
 
-org3C_umap_object <- plots_3C[[2]]
+C3_Day55_umap_object <- plotsC3Day55[[2]]
+saveRDS(C3_Day55_umap_object, file = "C3_Day55_umap_object.rds")
 
-saveRDS(org3C_umap_object, file = "org3C_umap_object.rds")
-
-
-###org_6A
-pdf(file = "org_6A_QC.pdf", width = 12, height = 12) 
-plots_6A <- plot_umap(decontx$removed_empty_org6A$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_6A (gene counts, cortex_org)', project = "org_6A", MT=10)
+###C3Day80
+pdf(file = "C3Day80_QC.pdf", width = 12, height = 12) 
+plotsC3Day80 <- plot_umap(results$C3_Day80_umap_object$decontaminated_counts, min.features = NULL, max.features = NULL, max.counts =100000, min.counts=1000, npc = 15, cluster_res = 0.7,fig_name = 'C3_Day80 (gene counts, Kolf2.1)', project = "C3_Day80", MT=10)
 dev.off()
 
-org6A_umap_object <- plots_6A[[2]]
+C3_Day80_umap_object <- plotsC3Day80[[2]]
+saveRDS(C3_Day80_umap_object, file = "C3_Day80_umap_object.rds")
 
-saveRDS(org6A_umap_object, file = "org6A_umap_object.rds")
-
-
-###org_6B
-pdf(file = "org_6B_QC.pdf", width = 12, height = 12) 
-plots_6B <- plot_umap(decontx$removed_empty_org6B$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_6B (gene counts, cortex_org)', project = "org_6B", MT=10)
+###C5Day25
+pdf(file = "C5Day25_QC.pdf", width = 12, height = 12) 
+plotsC5Day25 <- plot_umap(results$C5_Day25_umap_object$decontaminated_counts, min.features = 4000, max.features = 10000, max.counts =100000, min.counts=1000, npc = 12, cluster_res = 0.7,fig_name = 'C5_Day25 (gene counts, Kolf2.1)', project = "C5_Day25", MT=10)
 dev.off()
 
-org6B_umap_object <- plots_6B[[2]]
+C5_Day25_umap_object <- plotsC5Day25[[2]]
+saveRDS(C5_Day25_umap_object, file = "C5_Day25_umap_object.rds")
 
-saveRDS(org6B_umap_object, file = "org6B_umap_object.rds")
-
-
-###org_6C
-pdf(file = "org_6C_QC.pdf", width = 12, height = 12) 
-plots_6C <- plot_umap(decontx$removed_empty_org6C$decontaminated_counts, min.features = 2500, max.features = 100000, max.counts =100000, min.counts=2000, npc = 15, cluster_res = 0.7,fig_name = 'org_6C (gene counts, cortex_org)', project = "org_6C", MT=10)
+###C5Day80
+pdf(file = "C5Day80_QC.pdf", width = 12, height = 12) 
+plotsC5Day80 <- plot_umap(results$C5_Day80_umap_object$decontaminated_counts, min.features = NULL, max.features= NULL, max.counts =100000, min.counts=1000, npc = 15, cluster_res = 0.7,fig_name = 'C5Day80 (gene counts, Kolf2.1)', project = "C5_Day80", MT=10)
 dev.off()
 
-org6C_umap_object <- plots_6C[[2]]
+C5_Day80_umap_object <- plotsC5Day80[[2]]
+C5_Day80_umap_object_doublets <- plotsC5Day80[[5]]
 
-saveRDS(org6C_umap_object, file = "org6C_umap_object.rds")
-
-
-
+saveRDS(C5_Day80_umap_object, file = "C5_Day80_umap_object.rds")

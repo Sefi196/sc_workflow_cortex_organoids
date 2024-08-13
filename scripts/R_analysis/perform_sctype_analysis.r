@@ -54,7 +54,7 @@ perform_sctype_analysis <- function(seurat_obj, db_, tissue, gs_removal_list = c
   
   # Save the plot to a PDF
   pdf(file = paste0(figure_prefix, "_", metadat_col_prefix, "_sctype_genes.pdf"), width = 8, height = 8)
-  print(pclass)
+  print(pclass + ggtitle(figure_prefix))
   dev.off()
   
   # Save the updated Seurat object to an RDS file
@@ -66,44 +66,44 @@ perform_sctype_analysis <- function(seurat_obj, db_, tissue, gs_removal_list = c
   return(seurat_obj)
 }
 ####
-# Define variable
 
+# Define variable
 db_ = "https://raw.githubusercontent.com/IanevskiAleksandr/sc-type/master/ScTypeDB_full.xlsx";
-#db_ <- "/data/gpfs/projects/punim1441/FLAMES_202311/resources/6mOrgMarkers.xlsx"
+db_ <- "/data/gpfs/projects/punim1441/FLAMES_202311/resources/6mOrgMarkers.xlsx"
 tissue <- "Brain"
-gs_removal_list <- c("Tanycytes")
+gs_removal_list <- c("Tanycytes"#, "Dopaminergic neurons")
+)
 
 org1A_umap_object <- perform_sctype_analysis(org1A_umap_object, db_, tissue, gs_removal_list, 
-                        metadat_col_prefix ="manveer", figure_prefix = "org_1A",
-                        output_file = "org1A_umap_object", cluster_res = "RNA_snn_res.0.5")
+                        metadat_col_prefix ="sctype_db", figure_prefix = "org_1A",
+                        output_file = "org1A_umap_object", cluster_res = "RNA_snn_res.0.7")
 
-
-org_1B_umap_object <- perform_sctype_analysis(org_1B_umap_object, db_, tissue, gs_removal_list, 
-                                              metadat_col_prefix ="scytpe_db", figure_prefix = "org_1B",
+org_1B_umap_object <- perform_sctype_analysis(org1B_umap_object, db_, tissue, gs_removal_list, 
+                                              metadat_col_prefix ="sctype_db", figure_prefix = "org_1B",
                                               output_file = "org1B_umap_object", cluster_res = "RNA_snn_res.0.7")
 
-org_3A_umap_object <- perform_sctype_analysis(org_3A_umap_object, db_, tissue, gs_removal_list, 
-                                             metadat_col_prefix ="scytpe_db", figure_prefix = "org_3A",
+org_3A_umap_object <- perform_sctype_analysis(org3A_umap_object, db_, tissue, gs_removal_list, 
+                                             metadat_col_prefix ="sctype_db", figure_prefix = "org_3A",
                                              output_file = "org3A_umap_object", cluster_res = "RNA_snn_res.0.7")
 
-org_3B_umap_object <- perform_sctype_analysis(org_3B_umap_object, db_, tissue, gs_removal_list, 
-                                              metadat_col_prefix ="scytpe_db", figure_prefix = "org_3B",
+org_3B_umap_object <- perform_sctype_analysis(org3B_umap_object, db_, tissue, gs_removal_list, 
+                                              metadat_col_prefix ="sctype_db", figure_prefix = "org_3B",
                                               output_file = "org3B_umap_object", cluster_res = "RNA_snn_res.0.7")
 
-org_3C_umap_object <- perform_sctype_analysis(org_3C_umap_object, db_, tissue, gs_removal_list, 
-                                              metadat_col_prefix ="scytpe_db", figure_prefix = "org_3C",
+org_3C_umap_object <- perform_sctype_analysis(org3C_umap_object, db_, tissue, gs_removal_list, 
+                                              metadat_col_prefix ="sctype_db", figure_prefix = "org_3C",
                                               output_file = "org3C_umap_object", cluster_res = "RNA_snn_res.0.7")
 
 org_6A_umap_object <- perform_sctype_analysis(org6A_umap_object, db_, tissue, gs_removal_list, 
-                                              metadat_col_prefix ="scytpe_db", figure_prefix = "org_6A",
+                                              metadat_col_prefix ="sctype_db", figure_prefix = "org_6A",
                                               output_file = "org6A_umap_object", cluster_res = "RNA_snn_res.0.7")
 
-org_6B_umap_object <- perform_sctype_analysis(org_6B_umap_object, db_, tissue, gs_removal_list, 
-                                              metadat_col_prefix ="scytpe_db", figure_prefix = "org_6B",
+org_6B_umap_object <- perform_sctype_analysis(org6B_umap_object, db_, tissue, gs_removal_list, 
+                                              metadat_col_prefix ="sctype_db", figure_prefix = "org_6B",
                                               output_file = "org6B_umap_object", cluster_res = "RNA_snn_res.0.7")
 
-org_6C_umap_object <- perform_sctype_analysis(org_6C_umap_object, db_, tissue, gs_removal_list, 
-                                              metadat_col_prefix ="scytpe_db", figure_prefix = "org_6C",
+org_6C_umap_object <- perform_sctype_analysis(org6C_umap_object, db_, tissue, gs_removal_list, 
+                                              metadat_col_prefix ="sctype_db", figure_prefix = "org_6C",
                                               output_file = "org6C_umap_object", cluster_res = "RNA_snn_res.0.7")
 
 

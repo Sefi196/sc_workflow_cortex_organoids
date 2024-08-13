@@ -7,7 +7,7 @@ setwd("/data/scratch/users/yairp/FLAMES-may1/analysis/seurat_analysis/data/genes
 ref_table <- read.csv("/data/gpfs/projects/punim1441/FLAMES_202311//resources/v41_ENSG_ID_GENEsymbol.csv", header = TRUE)
 
 # Load the data object with ENSG row names
-data_obj <- read.csv('org_3B_gene_count.csv', header=T)
+data_obj <- read.csv('org_6C_gene_count.csv', header=T)
 colnames(data_obj)[1] <- "gene_id"
 
 merged.file = merge(data_obj, ref_table, by.x='gene_id', by.y='gene_id')
@@ -30,7 +30,7 @@ row.names(df_unique) <- df_unique[, ncol(df_unique)]
 df_unique <- df_unique[, -ncol(df_unique)]
 
 #write out new data frame
-write.csv(df_unique, "geneSymbol_org_3B_gene_count.csv")
+write.csv(df_unique, "geneSymbol_org_6C_gene_count.csv")
 
 
 ###END###
