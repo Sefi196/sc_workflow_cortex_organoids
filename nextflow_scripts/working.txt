@@ -1,0 +1,3 @@
+Rscript /data/scratch/projects/punim1441/Project_cortex_organoid_LRsc/sc_workflow_cortex_organoids/nextflow_scripts/QC.R \
+-i /data/scratch/projects/punim1441/Project_cortex_organoid_LRsc/sc_workflow_cortex_organoids/results/decontx/org_1A_gene_count.csv_decontx_counts.csv \
+ --npc 20 --cluster_res 0.7 --mt 10 --min_counts 1000 --max_counts 100000 --sample 'test'
